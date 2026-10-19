@@ -24,8 +24,9 @@ jobs:
 
       - name: Set up Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.1.app || sudo xcode-select -s /Applications/Xcode_16.0.app || true
+          sudo xcodebuild -runFirstLaunch
           xcodebuild -version
+          xcrun simctl list runtimes
 
       - name: Install XcodeGen
         run: |
