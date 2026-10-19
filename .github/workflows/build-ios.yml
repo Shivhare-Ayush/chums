@@ -1,0 +1,77 @@
+name: Build Chums iOS & WatchOS App (Sideloadly IPA)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      hub_host:
+        description: 'Chums Hub Host URL (LAN or Tailscale)'
+        required: true
+        default: 'http://192.168.1.112:7718'
+      watch_token:
+        description: 'Chums Hub Watch Token'
+        required: true
+        default: '66dXxfR15wsZG1Lbyg8XyopI'
+
+jobs:
+  build-ipa:
+    name: Build Sideloadable IPA
+    runs-on: macos-15
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.1.app || sudo xcode-select -s /Applications/Xcode_16.0.app || true
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+
+      - name: Generate HubConfig.swift
+        env:
+          CHUMS_HUB_HOSTS: ${{ github.event.inputs.hub_host || 'http://192.168.1.112:7718' }},http://127.0.0.1:7718
+          CHUMS_WATCH_TOKEN: ${{ github.event.inputs.watch_token || '66dXxfR15wsZG1Lbyg8XyopI' }}
+        run: |
+          python3 tools/ci-gen-config.py
+
+      - name: Generate Xcode Project with XcodeGen
+        env:
+          CHUMS_BUNDLE: "dev.chums.ayush"
+          CHUMS_TEAM: "0000000000"
+        run: |
+          cd app
+          xcodegen generate
+
+      - name: Build and Archive iOS & WatchOS App
+        run: |
+          cd app
+          xcodebuild -project Chums.xcodeproj \
+            -scheme Chums \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Chums.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package Payload as IPA
+        run: |
+          cd app
+          mkdir -p Payload
+          cp -R build/Chums.xcarchive/Products/Applications/Chums.app Payload/
+          zip -qr ../Chums.ipa Payload
+          cd ..
+          ls -lh Chums.ipa
+
+      - name: Upload Chums IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chums-iOS-Watch-IPA
+          path: Chums.ipa
+          retention-days: 14
