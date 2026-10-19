@@ -29,7 +29,7 @@ jobs:
 
       - name: Generate HubConfig.swift
         env:
-          CHUMS_HUB_HOSTS: ${{ github.event.inputs.hub_host || vars.CHUMS_HUB_HOST }},http://127.0.0.1:7718
+          CHUMS_HUB_HOSTS: ${{ github.event.inputs.hub_host || vars.CHUMS_HUB_HOST }}
           CHUMS_WATCH_TOKEN: ${{ secrets.CHUMS_WATCH_TOKEN }}
         run: |
           python3 tools/ci-gen-config.py

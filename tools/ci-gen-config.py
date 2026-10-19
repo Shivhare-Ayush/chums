@@ -2,9 +2,11 @@
 import json, os, sys, datetime
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-hosts_env = os.environ.get("CHUMS_HUB_HOSTS", "http://192.168.1.112:7718,http://127.0.0.1:7718")
+hosts_env = os.environ.get("CHUMS_HUB_HOSTS", "")
 hosts = [h.strip() for h in hosts_env.split(",") if h.strip()]
-token = os.environ.get("CHUMS_WATCH_TOKEN", "66dXxfR15wsZG1Lbyg8XyopI")
+token = os.environ.get("CHUMS_WATCH_TOKEN", "")
+if not hosts or not token:
+    sys.exit("CHUMS_HUB_HOSTS and CHUMS_WATCH_TOKEN must be set before generating HubConfig.swift.")
 diagnostics = os.environ.get("CHUMS_DIAGNOSTICS", "false").lower() in ("true", "1", "yes")
 
 build = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
