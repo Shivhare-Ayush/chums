@@ -85,8 +85,16 @@ jobs:
           cp -R build/sym/Release-iphoneos/Chums.app Payload/
           if [ -d "build/sym/Release-watchos/ChumsWatch.app" ]; then
             echo "Embedding Watch app into Payload/Chums.app/Watch/..."
+            rm -rf Payload/Chums.app/Watch
             mkdir -p Payload/Chums.app/Watch
             cp -R build/sym/Release-watchos/ChumsWatch.app Payload/Chums.app/Watch/
+          fi
+          echo "Verifying package structure:"
+          ls -lh Payload/
+          ls -lh Payload/Chums.app/
+          if [ -d "Payload/Chums.app/Watch" ]; then
+            echo "Watch folder contents:"
+            ls -lh Payload/Chums.app/Watch/
           fi
           zip -qr ../Chums.ipa Payload
           cd ..

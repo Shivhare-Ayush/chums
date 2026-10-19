@@ -59,9 +59,6 @@ targets:
     scheme:
       testTargets: [ChumsPhoneUITests]
     dependencies:
-      # the Home Screen and Lock Screen widgets and the Talk control
-      - target: ChumsPhoneWidgets
-        embed: true
       # The watch app ships inside the phone app, in its Watch folder.
       - target: ChumsWatch
         embed: true
@@ -103,56 +100,6 @@ targets:
         # HealthKit, only to run a workout session that keeps Chums on screen (keyring mode); nothing is saved
         CODE_SIGN_ENTITLEMENTS: ChumsWatch/ChumsWatch.entitlements
         TARGETED_DEVICE_FAMILY: "4"
-    dependencies:
-      # the complication / Smart Stack widget that opens Chums
-      - target: ChumsWidget
-  ChumsWidget:
-    type: app-extension
-    platform: watchOS
-    sources: [ChumsWidget]
-    info:
-      path: ChumsWidget/Info.plist
-      properties:
-        CFBundleDisplayName: Chums
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${CHUMS_BUNDLE}.watchkitapp.widget
-        TARGETED_DEVICE_FAMILY: "4"
-        SKIP_INSTALL: YES
-  ChumsPhoneWidgets:
-    type: app-extension
-    platform: iOS
-    sources:
-      - ChumsPhoneWidgets
-      - ChumsPhoneShared
-      - path: ChumsWatch/HubConfig.swift
-      # the watch's characters, to draw its screen in the widgets (WatchScreen)
-      - path: ChumsWatch
-        includes: [Rig/*.swift, AgentFace.swift]
-      - path: ChumsWatch/Noodle
-        type: folder
-        buildPhase: resources
-      - path: ChumsWatch/noodle-shapes.bin
-        buildPhase: resources
-      - Shared/Characters.xcassets
-    info:
-      path: ChumsPhoneWidgets/Info.plist
-      properties:
-        CFBundleDisplayName: Chums
-        CFBundleShortVersionString: $(MARKETING_VERSION)
-        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
-        NSAppTransportSecurity:
-          NSAllowsLocalNetworking: true
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${CHUMS_BUNDLE}.widgets
-        TARGETED_DEVICE_FAMILY: "1"
-        SKIP_INSTALL: YES
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
   # the iPhone app driven by real touches in the Simulator (ChumsPhoneUITests.swift says how to run it)
   ChumsPhoneUITests:
     type: bundle.ui-testing
