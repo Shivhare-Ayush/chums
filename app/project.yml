@@ -28,7 +28,7 @@ targets:
       # the watch's engine, shared: the characters, the hub, talking, the conversation (watch-only parts are #if'd)
       - path: ChumsWatch
         includes: [Rig/*.swift, Screen.swift, HubClient.swift, HubConfig.swift, Voice.swift, Controller.swift, Chat.swift,
-                   Artifacts.swift, Alerts.swift, Agents.swift, AgentFace.swift, Soul.swift, StayOn.swift]
+                   Artifacts.swift, Alerts.swift, Agents.swift, AgentFace.swift, Soul.swift, StayOn.swift, GlassCompat.swift]
       - path: ChumsWatch/Noodle
         type: folder
         buildPhase: resources
