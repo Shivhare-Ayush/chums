@@ -8,11 +8,6 @@ on:
       hub_host:
         description: 'Chums Hub Host URL (LAN or Tailscale)'
         required: true
-        default: 'http://192.168.1.112:7718'
-      watch_token:
-        description: 'Chums Hub Watch Token'
-        required: true
-        default: '66dXxfR15wsZG1Lbyg8XyopI'
 
 jobs:
   build-ipa:
@@ -34,8 +29,8 @@ jobs:
 
       - name: Generate HubConfig.swift
         env:
-          CHUMS_HUB_HOSTS: ${{ github.event.inputs.hub_host || 'http://192.168.1.112:7718' }},http://127.0.0.1:7718
-          CHUMS_WATCH_TOKEN: ${{ github.event.inputs.watch_token || '66dXxfR15wsZG1Lbyg8XyopI' }}
+          CHUMS_HUB_HOSTS: ${{ github.event.inputs.hub_host || vars.CHUMS_HUB_HOST }},http://127.0.0.1:7718
+          CHUMS_WATCH_TOKEN: ${{ secrets.CHUMS_WATCH_TOKEN }}
         run: |
           python3 tools/ci-gen-config.py
 
