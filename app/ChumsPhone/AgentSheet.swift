@@ -491,7 +491,6 @@ private struct CardPage: ViewModifier {
                     .accessibilityLabel("Back")
                     .accessibilityIdentifier("back")
                 }
-                .sharedBackgroundVisibility(.hidden)
             }
             .background(EdgeSwipeBack())
     }

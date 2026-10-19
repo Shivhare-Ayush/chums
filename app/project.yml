@@ -4,7 +4,7 @@ name: Chums
 options:
   bundleIdPrefix: dev.chums
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "18.0"
     watchOS: "10.0"
   createIntermediateGroups: true
 settings:
