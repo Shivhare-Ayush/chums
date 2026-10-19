@@ -146,7 +146,7 @@ const SEED_SOULS = {
 }
 const seedOf = id => ({ owns: 'Whatever you ask it.', refers: 'Code to Noodle. Your Mac and browser to Squint. Design work to Peeps.',
   voice: 'Brief.', body: 'An agent.', ...SEED_SOULS[id] })
-const git = (...args) => run('/usr/bin/git', ['-C', SOUL_DIR, ...args])
+const git = (...args) => run(process.platform === 'win32' ? 'git' : '/usr/bin/git', ['-C', SOUL_DIR, ...args])
 const soulFile = id => path.join(SOUL_DIR, `${id}.md`)
 function parseSoul(text) {
   const m = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/)
@@ -1559,7 +1559,7 @@ for (const [srv, key] of [[server, 'port'], [publicServer, 'publicPort']]) srv.o
   process.exit(1)
 })
 server.listen(cfg.port, '127.0.0.1', () => { log(`Chums hub on 127.0.0.1:${cfg.port}  config ${CONFIG_PATH}`); if (++listening === 2) startAll() })
-publicServer.listen(cfg.publicPort, '127.0.0.1', () => { log(`watch API for the tunnel on 127.0.0.1:${cfg.publicPort}${cfg.publicURL ? `  (${cfg.publicURL})` : ''}`); if (++listening === 2) startAll() })
+publicServer.listen(cfg.publicPort, cfg.bindHost || '0.0.0.0', () => { log(`watch API on ${cfg.bindHost || '0.0.0.0'}:${cfg.publicPort}${cfg.publicURL ? ` (${cfg.publicURL})` : ''}`); if (++listening === 2) startAll() })
 const quit = () => { quitting = true; whisper?.kill(); kokoro.proc?.kill(); for (const r of runners.values()) r?.stop(); setTimeout(() => process.exit(0), 300) }
 process.on('SIGTERM', quit)
 process.on('SIGINT', quit)
