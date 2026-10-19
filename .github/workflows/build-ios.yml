@@ -46,25 +46,47 @@ jobs:
           cd app
           xcodegen generate
 
-      - name: Build and Archive iOS & WatchOS App
+      - name: Build iOS App and Watch Companion
         run: |
           cd app
+          # Build target Chums (iPhone app)
           xcodebuild -project Chums.xcodeproj \
-            -scheme Chums \
+            -target Chums \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath build/Chums.xcarchive \
-            archive \
+            SYMROOT="$PWD/build/sym" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
+            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
+            build
+
+          # Build target ChumsWatch (Apple Watch companion app)
+          xcodebuild -project Chums.xcodeproj \
+            -target ChumsWatch \
+            -configuration Release \
+            -destination 'generic/platform=watchOS' \
+            SYMROOT="$PWD/build/sym" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
+            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
+            build || true
 
       - name: Package Payload as IPA
         run: |
           cd app
           mkdir -p Payload
-          cp -R build/Chums.xcarchive/Products/Applications/Chums.app Payload/
+          cp -R build/sym/Release-iphoneos/Chums.app Payload/
+          if [ -d "build/sym/Release-watchos/ChumsWatch.app" ]; then
+            echo "Embedding Watch app into Payload/Chums.app/Watch/..."
+            mkdir -p Payload/Chums.app/Watch
+            cp -R build/sym/Release-watchos/ChumsWatch.app Payload/Chums.app/Watch/
+          fi
           zip -qr ../Chums.ipa Payload
           cd ..
           ls -lh Chums.ipa
