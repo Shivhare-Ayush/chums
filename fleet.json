@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "currentNode": "laptop",
+  "nodes": {
+    "laptop": {
+      "name": "Ayush Laptop (Windows)",
+      "host": "100.90.188.112",
+      "magicDns": "ayush-laptop.tail32641f.ts.net",
+      "hubPort": 7717,
+      "publicPort": 7718,
+      "daemonPort": 8765,
+      "status": "online"
+    },
+    "desktop": {
+      "name": "Ayush Desktop PC",
+      "host": "100.x.x.x",
+      "magicDns": "ayush-pc.tail32641f.ts.net",
+      "hubPort": 7717,
+      "publicPort": 7718,
+      "daemonPort": 8765,
+      "status": "unconfigured"
+    },
+    "homelab": {
+      "name": "Homelab Proxmox Server",
+      "host": "100.x.x.x",
+      "magicDns": "homelab.tail32641f.ts.net",
+      "hubPort": 7717,
+      "publicPort": 7718,
+      "daemonPort": 8765,
+      "status": "unconfigured"
+    },
+    "cloud": {
+      "name": "Cloud VM / Elastic Compute",
+      "host": "100.x.x.x",
+      "magicDns": "cloud-node.tail32641f.ts.net",
+      "hubPort": 7717,
+      "publicPort": 7718,
+      "daemonPort": 8765,
+      "status": "unconfigured"
+    }
+  },
+  "characterDefaults": {
+    "peeps": {
+      "primaryNode": "laptop",
+      "role": "Vault & Personal OS Intake"
+    },
+    "noodle": {
+      "primaryNode": "laptop",
+      "role": "Coding Agent & Tool Streaming"
+    },
+    "squint": {
+      "primaryNode": "laptop",
+      "role": "System Ops & Telemetry"
+    },
+    "stretch": {
+      "primaryNode": "cloud",
+      "role": "Autonomous Background Tasks"
+    }
+  }
+}
