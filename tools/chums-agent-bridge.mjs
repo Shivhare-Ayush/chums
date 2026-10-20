@@ -303,14 +303,23 @@ async function handleOrder(agent, item) {
     return
   }
 
-  // 8. STATUS / HEALTH / PING
-  if (text.includes('status') || text.includes('health') || text.includes('ping') || text.includes('how are you')) {
+  // 8. STATUS / HEALTH / PING (Exact / narrow match so commands like "git status" are not trapped)
+  const isStatusQuery =
+    text === 'status' ||
+    text === 'health' ||
+    text === 'ping' ||
+    text === 'how are you' ||
+    text === 'agent status' ||
+    text === 'node status' ||
+    text === 'what is your status'
+
+  if (isStatusQuery) {
     const attacherStatus = getAttacherStatus(agent.name)
     const health = await getDaemonHealth()
 
     let reply = ''
     if (attacherStatus.attached) {
-      reply = `${agent.name} is attached to ${attacherStatus.conversationId.slice(0, 8)} (${attacherStatus.state}, step ${attacherStatus.stepIndex}). `
+      reply = `${agent.name} is attached to ${attacherStatus.conversationId.slice(0, 8)} (${attacherStatus.state}). `
     } else {
       reply = `${agent.name} is idle on laptop. `
     }
@@ -323,19 +332,38 @@ async function handleOrder(agent, item) {
   }
 
   // 9. FRIENDLY GREETINGS
-  if (text.includes('hello') || text.includes('hey') || text.includes('hi') || text.includes('who are you')) {
+  if (text === 'hello' || text === 'hey' || text === 'hi' || text === 'who are you') {
     if (agent.name === 'peeps') {
       await replyAgent(sessionId, `Hey Ayush! Peeps is online. Send meal photos or workouts to log, or say "status".`)
     } else if (agent.name === 'noodle') {
-      await replyAgent(sessionId, `Hey Ayush! Noodle is online. Say "list convos" to attach to an active coding session.`)
+      await replyAgent(sessionId, `Hey Ayush! Noodle is online. Speak any coding prompt and I'll send it directly to Antigravity!`)
     } else {
       await replyAgent(sessionId, `Hey Ayush! ${agent.name} is online and ready for orders on your PC.`)
     }
     return
   }
 
-  // 10. BI-DIRECTIONAL PROMPT INJECTION (IF ATTACHED OR EXPLICIT INJECTION)
-  const attacherStatus = getAttacherStatus(agent.name || agent.character)
+  // 10. BI-DIRECTIONAL PROMPT INJECTION (IF ATTACHED OR EXPLICIT INJECTION OR NOODLE)
+  let attacherStatus = getAttacherStatus(agent.name || agent.character)
+  
+  // If noodle is not yet attached, auto-discover active Antigravity session dynamically
+  if (!attacherStatus.attached && agent.name === 'noodle') {
+    try {
+      const activeConvo = await antigravityInjector.getActiveConversation()
+      if (activeConvo && activeConvo.id) {
+        log(`[Injector] Dynamically attaching noodle to active session "${activeConvo.title}" (${activeConvo.id})`)
+        await attachSession(agent.name, activeConvo.id, {
+          hubUrl: HUB_URL,
+          token: cfg.token,
+          hubToken: cfg.token
+        })
+        attacherStatus = getAttacherStatus(agent.name)
+      }
+    } catch (err) {
+      log(`[Injector] Dynamic attach error:`, err.message)
+    }
+  }
+
   if (attacherStatus && attacherStatus.attached) {
     log(`[Injector] Injecting prompt for attached agent ${agent.name}: "${rawText}"`)
     const injectRes = await antigravityInjector.injectPrompt({
@@ -344,7 +372,7 @@ async function handleOrder(agent, item) {
       autoSend: true
     })
     if (injectRes.success) {
-      await replyAgent(sessionId, `🚀 Injected prompt into Antigravity: "${rawText}"`)
+      await replyAgent(sessionId, `🚀 Injected into Antigravity: "${rawText}"`)
     } else {
       await replyAgent(sessionId, `⚠️ Failed to inject prompt: ${injectRes.error || 'unknown error'}`)
     }
@@ -360,7 +388,7 @@ async function handleOrder(agent, item) {
       autoSend: true
     })
     if (injectRes.success) {
-      await replyAgent(sessionId, `🚀 Injected prompt into Antigravity: "${promptText}"`)
+      await replyAgent(sessionId, `🚀 Injected into Antigravity: "${promptText}"`)
     } else {
       await replyAgent(sessionId, `⚠️ Failed to inject prompt: ${injectRes.error || 'unknown error'}`)
     }

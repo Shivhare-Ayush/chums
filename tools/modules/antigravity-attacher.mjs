@@ -205,6 +205,7 @@ export class AntigravityAttacher {
       return {
         character: charName,
         state: 'detached',
+        attached: false,
         conversationId: null,
         generation: 0,
         currentOffset: 0,
@@ -216,6 +217,7 @@ export class AntigravityAttacher {
     return {
       character: charName,
       state: rec.state,
+      attached: typeof rec.state === 'string' && rec.state.startsWith('attached'),
       conversationId: rec.conversationId,
       generation: rec.generation,
       currentOffset: rec.byteOffset,
