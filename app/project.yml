@@ -50,9 +50,9 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: chums
             CFBundleURLSchemes: [chums]
+        NSLocalNetworkUsageDescription: Talks to the hub running on your Mac.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
-          NSAllowsLocalNetworking: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${CHUMS_BUNDLE}
@@ -95,7 +95,6 @@ targets:
         # plain HTTP only for the Simulator's 127.0.0.1; a real watch uses the Funnel HTTPS address
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
-          NSAllowsLocalNetworking: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${CHUMS_BUNDLE}.watchkitapp
