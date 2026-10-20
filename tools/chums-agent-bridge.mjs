@@ -15,6 +15,7 @@ import {
   detachSession,
   getStatus as getAttacherStatus
 } from './modules/antigravity-attacher.mjs'
+import * as antigravityInjector from './modules/antigravity-injector.mjs'
 
 const execAsync = promisify(exec)
 
@@ -198,8 +199,9 @@ async function handleOrder(agent, item) {
       return
     }
 
-    const attached = attachSession(agent.name, targetId, {
+    const attached = await attachSession(agent.name, targetId, {
       hubUrl: HUB_URL,
+      token: cfg.token,
       hubToken: cfg.token
     })
 
@@ -213,7 +215,7 @@ async function handleOrder(agent, item) {
 
   // 4. DETACH SESSION: "detach", "stop mirror"
   if (text.includes('detach') || text.includes('stop mirror') || text.includes('disconnect session')) {
-    detachSession(agent.name)
+    await detachSession(agent.name)
     await replyAgent(sessionId, `${agent.name} is now detached and idle.`)
     return
   }
@@ -332,7 +334,40 @@ async function handleOrder(agent, item) {
     return
   }
 
-  // 10. DEFAULT ECHO & HELP
+  // 10. BI-DIRECTIONAL PROMPT INJECTION (IF ATTACHED OR EXPLICIT INJECTION)
+  const attacherStatus = getAttacherStatus(agent.name || agent.character)
+  if (attacherStatus && attacherStatus.attached) {
+    log(`[Injector] Injecting prompt for attached agent ${agent.name}: "${rawText}"`)
+    const injectRes = await antigravityInjector.injectPrompt({
+      conversationId: attacherStatus.conversationId,
+      text: rawText,
+      autoSend: true
+    })
+    if (injectRes.success) {
+      await replyAgent(sessionId, `🚀 Injected prompt into Antigravity: "${rawText}"`)
+    } else {
+      await replyAgent(sessionId, `⚠️ Failed to inject prompt: ${injectRes.error || 'unknown error'}`)
+    }
+    return
+  }
+
+  // Explicit prompt injection command even if detached: "prompt <msg>", "inject <msg>"
+  if (text.startsWith('prompt ') || text.startsWith('inject ')) {
+    const promptText = rawText.replace(/^(prompt|inject)\s+/i, '').trim()
+    log(`[Injector] Explicit prompt injection: "${promptText}"`)
+    const injectRes = await antigravityInjector.injectPrompt({
+      text: promptText,
+      autoSend: true
+    })
+    if (injectRes.success) {
+      await replyAgent(sessionId, `🚀 Injected prompt into Antigravity: "${promptText}"`)
+    } else {
+      await replyAgent(sessionId, `⚠️ Failed to inject prompt: ${injectRes.error || 'unknown error'}`)
+    }
+    return
+  }
+
+  // 11. DEFAULT ECHO & HELP
   await replyAgent(
     sessionId,
     `Received: "${rawText}". Options: "add to food log [photo]", "list convos", "attach to 1", "run <cmd>", or "status".`
@@ -363,6 +398,23 @@ async function runAgentWorker(agent) {
       }
 
       log(`Registered agent ${agent.name} (${sessionId}) -> status: idle`)
+
+      // Auto-attach noodle to the most recent Antigravity conversation
+      if (agent.name === 'noodle') {
+        try {
+          const convos = await listRecentConversations(1)
+          if (convos.length > 0) {
+            await attachSession(agent.name, convos[0].conversation_id, {
+              hubUrl: HUB_URL,
+              token: cfg.token,
+              hubToken: cfg.token
+            })
+            log(`[Bridge] Auto-attached noodle to active Antigravity session: "${convos[0].title}" (${convos[0].conversation_id})`)
+          }
+        } catch (err) {
+          log(`[Bridge] Auto-attach failed:`, err.message)
+        }
+      }
 
       // 2. Poll loop
       let ack = []

@@ -503,7 +503,7 @@ export class AntigravityAttacher {
 
     const port = record.hubConfig.port || 7717
     const hubUrl = record.hubConfig.hubUrl || `http://127.0.0.1:${port}`
-    const token = record.hubConfig.token
+    const token = record.hubConfig.token || record.hubConfig.hubToken
     const headers = { 'content-type': 'application/json' }
     if (token) headers['authorization'] = `Bearer ${token}`
 
