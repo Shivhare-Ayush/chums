@@ -246,13 +246,35 @@ async function handleOrder(agent, item) {
     return
   }
 
-  // 6. MULTI-NODE FLEET QUERY / OVERRIDE: "fleet", "nodes", "on desktop ..."
-  if (text === 'fleet' || text === 'nodes' || text.includes('list nodes')) {
+  // 6. MULTI-NODE FLEET QUERY & NODE SWITCHING: "fleet", "nodes", "switch to <node>", "on desktop ..."
+  if (text === 'fleet' || text === 'nodes' || text === 'list nodes' || text === 'devices') {
     const fleet = loadFleet()
     const nodeList = Object.entries(fleet.nodes)
-      .map(([id, n]) => `${n.name || id} (${n.status || 'unknown'})`)
-      .join(', ')
-    await replyAgent(sessionId, `Fleet nodes: ${nodeList}. Current node: ${fleet.currentNode || 'laptop'}.`)
+      .map(([id, n]) => `${n.name || id} [${id}] (${n.status || 'unknown'})`)
+      .join('\n• ')
+    await replyAgent(
+      sessionId,
+      `Fleet Devices:\n• ${nodeList}\nActive Node: ${fleet.currentNode || 'laptop'}.\nSay "switch to <device>" to change default.`
+    )
+    return
+  }
+
+  if (text.startsWith('switch to ') || text.startsWith('use node ') || text.startsWith('connect to ')) {
+    const target = text.replace(/^(switch to|use node|connect to)\s+/i, '').trim().toLowerCase()
+    const fleet = loadFleet()
+    if (fleet.nodes && fleet.nodes[target]) {
+      fleet.currentNode = target
+      try {
+        fs.writeFileSync(FLEET_PATH, JSON.stringify(fleet, null, 2))
+      } catch {}
+      await replyAgent(
+        sessionId,
+        `Switched active fleet device to ${fleet.nodes[target].name || target}. Commands will route to this node.`
+      )
+    } else {
+      const valid = Object.keys(fleet.nodes || {}).join(', ')
+      await replyAgent(sessionId, `Unknown device "${target}". Available devices: ${valid}.`)
+    }
     return
   }
 
@@ -264,12 +286,46 @@ async function handleOrder(agent, item) {
       await replyAgent(sessionId, `${target.toUpperCase()} node is currently offline on Tailscale. Running on laptop instead.`)
     } else {
       await replyAgent(sessionId, `Routing order to ${node.name || target} across Tailscale.`)
-      // Forwarding hook can be expanded when peer daemons are deployed
       return
     }
   }
 
-  // 7. DESKTOP / DAEMON CONTROLS
+  // 7. SESSION MANAGEMENT: "start new", "new session", "info", "meta"
+  if (text === 'start new' || text === 'new session' || text === 'new convo' || text === 'create session') {
+    await detachSession(agent.name)
+    const result = await callDaemonAction('spawn_agent')
+    await replyAgent(
+      sessionId,
+      `Detached from previous session and opened a new Agent session on your PC! Say "list convos" to attach.`
+    )
+    return
+  }
+
+  if (text === 'info' || text === 'meta' || text === 'workspace info') {
+    const attacherStatus = getAttacherStatus(agent.name)
+    const fleet = loadFleet()
+    const currentNode = fleet.currentNode || 'laptop'
+    const nodeObj = fleet.nodes?.[currentNode] || {}
+    let gitBranch = 'main'
+    try {
+      const { stdout } = await execAsync('git rev-parse --abbrev-ref HEAD', { timeout: 2000 })
+      gitBranch = stdout.trim()
+    } catch {}
+
+    let reply = `[Workspace Meta Info]\n`
+    reply += `• Device: ${nodeObj.name || currentNode} (${nodeObj.status || 'online'})\n`
+    reply += `• Repo/Vault: Obsidian (branch: ${gitBranch})\n`
+    if (attacherStatus.attached) {
+      reply += `• Attached: "${attacherStatus.conversationId.slice(0, 8)}..." (${attacherStatus.state})\n`
+      reply += `• Tools Streamed: ${attacherStatus.seenToolCallsCount || 0}`
+    } else {
+      reply += `• Session: Detached / Idle`
+    }
+    await replyAgent(sessionId, reply)
+    return
+  }
+
+  // 8. DESKTOP / DAEMON CONTROLS
   if (text.includes('spawn') || text.includes('new agent') || text.includes('open agent')) {
     log(`Triggering spawn_agent via daemon...`)
     const result = await callDaemonAction('spawn_agent')
